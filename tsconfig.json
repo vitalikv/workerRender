@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ESNext", // Используйте ESNext для поддержки современных функций
+    "module": "ESNext", // Установите модульную систему на ESNext
+    "lib": ["DOM", "ESNext"], // Добавьте ESNext для поддержки import.meta
+    "moduleResolution": "Node", // Используйте Node-стиль для разрешения модулей
+    "strict": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "./dist/",
+    "rootDir": "./src",
+    "sourceMap": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
+}
