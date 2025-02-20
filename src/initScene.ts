@@ -100,7 +100,6 @@ export class InitScene {
   };
 
   getClickedObject = (event, camera = this.camera, scene = this.scene, rect) => {
-    // Создаем Raycaster
     const raycaster = new THREE.Raycaster();
 
     const mouse = new THREE.Vector2();

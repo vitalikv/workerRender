@@ -1,14 +1,13 @@
-import { start } from './index';
-
-export class W2 {
+export class InitWorker {
   init() {
     const canvas = document.body.querySelector('#scene2') as HTMLCanvasElement;
-    console.log(777, canvas);
+
     const offscreen = canvas.transferControlToOffscreen();
-    const worker = new Worker(new URL('worker.ts', import.meta.url), { type: 'module' });
+    const worker = new Worker(new URL('worker2.ts', import.meta.url), { type: 'module' });
     worker.postMessage(
       {
-        drawingSurface: offscreen,
+        type: 'initScene',
+        offscreen,
         width: canvas.clientWidth,
         height: canvas.clientHeight,
       },
@@ -20,7 +19,6 @@ export class W2 {
         type: 'mousedown',
         clientX: event.clientX,
         clientY: event.clientY,
-        //camera: start.getCamera(),
       });
     });
 
@@ -44,6 +42,17 @@ export class W2 {
       worker.postMessage({
         type: 'wheel',
         deltaY: event.deltaY,
+      });
+    });
+
+    canvas.addEventListener('click', (event) => {
+      const rect = canvas.getBoundingClientRect();
+
+      worker.postMessage({
+        type: 'click',
+        clientX: event.clientX,
+        clientY: event.clientY,
+        rect,
       });
     });
   }

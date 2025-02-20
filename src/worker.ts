@@ -27,7 +27,6 @@ self.onmessage = (message) => {
         break;
 
       case 'mousemove':
-        console.log(camera.rotation.y);
         if (isDragging) {
           const deltaX = clientX - previousMousePosition.x;
           const deltaY = clientY - previousMousePosition.y;
