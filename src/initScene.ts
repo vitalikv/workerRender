@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import textureUrl from './assets/img/image-1.png';
 
 export class InitScene {
@@ -18,6 +19,7 @@ export class InitScene {
 
     this.init({ canvas, width, height });
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.loadObj({ scene: this.scene });
     this.renderFrame();
 
     this.domElement = this.renderer.domElement;
@@ -120,4 +122,32 @@ export class InitScene {
     console.log(888, obj);
     return obj;
   };
+
+  loadObj({ scene }) {
+    const loader = new GLTFLoader();
+    loader.load(
+      './assets/model/0019.005-AS.glb',
+      (gltf) => {
+        const gltfScene = gltf.scene.children[0];
+        gltfScene.scale.setScalar(10);
+        gltfScene.rotation.x = 1.571;
+
+        const box = new THREE.Box3();
+        box.setFromObject(gltfScene);
+        box.getCenter(gltfScene.position).negate();
+        gltfScene.updateMatrixWorld(true);
+
+        gltfScene.position.y += 1;
+
+        scene.add(gltfScene);
+        console.log(999, gltfScene);
+      },
+      (xhr) => {
+        console.log((xhr.loaded / xhr.total) * 100 + '% loaded');
+      },
+      (error) => {
+        console.error('Error loading model', error);
+      }
+    );
+  }
 }

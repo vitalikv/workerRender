@@ -57,6 +57,8 @@ class CanvasWorker {
 
     this.scene = this.initScene.scene;
     this.camera = this.initScene.camera;
+
+    this.initScene.loadObj({ scene: this.scene });
   }
 
   handleMouseDown(clientX, clientY) {
