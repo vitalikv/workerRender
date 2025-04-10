@@ -8,8 +8,9 @@ class Start {
     const initScene = new InitScene();
     initScene.initCanvas1();
 
+    const canvas = document.body.querySelector('#scene2') as HTMLCanvasElement;
     const initWorker = new InitWorker();
-    initWorker.init();
+    initWorker.init({ canvas });
   }
 }
 

@@ -1,9 +1,16 @@
+//import { scriptObject } from './worker';
+
 export class InitWorker {
-  init() {
-    const canvas = document.body.querySelector('#scene2') as HTMLCanvasElement;
+  init({ canvas }) {
+    //const canvas = document.body.querySelector('#scene2') as HTMLCanvasElement;
 
     const offscreen = canvas.transferControlToOffscreen();
     const worker = new Worker(new URL('worker2.ts', import.meta.url), { type: 'module' });
+
+    // const objectUrl = URL.createObjectURL(scriptObject);
+    // const worker = new Worker(objectUrl);
+    // URL.revokeObjectURL(objectUrl);
+
     worker.postMessage(
       {
         type: 'initScene',

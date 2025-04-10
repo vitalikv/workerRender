@@ -1,5 +1,5 @@
-import { OffscreenCanvas } from 'three';
-import { InitScene } from './initScene';
+const workerScript = `
+importScripts('./initScene.ts');
 
 let camera = null;
 let isDragging = false;
@@ -8,15 +8,10 @@ let previousMousePosition = { x: 0, y: 0 };
 self.onmessage = (message) => {
   const data = message.data;
 
-  if (!data.type) {
+  if (data.type === 'initScene') {
     // const canvas = data.drawingSurface as OffscreenCanvas;
 
-    const initScene = new InitScene();
-
-    initScene.init({ canvas: data.drawingSurface, width: data.width, height: data.height });
-    initScene.renderFrame();
-
-    camera = initScene.camera;
+    console.log(555, data);
   } else {
     const { type, clientX, clientY } = data;
 
@@ -43,4 +38,8 @@ self.onmessage = (message) => {
         break;
     }
   }
-};
+};`;
+
+export const scriptObject = new Blob([workerScript], {
+  type: 'application/javascript',
+});

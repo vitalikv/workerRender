@@ -1,9 +1,11 @@
 import { Quaternion, Vector3 } from 'three';
 import { InitScene } from './initScene';
+import { CameraController } from './cameraController';
 
 class CanvasWorker {
   scene = null;
   camera = null;
+  controls = null;
   isDragging = false;
   previousMousePosition = { x: 0, y: 0 };
   initScene = null;
@@ -57,6 +59,7 @@ class CanvasWorker {
 
     this.scene = this.initScene.scene;
     this.camera = this.initScene.camera;
+    this.controls = new CameraController(this.camera, data.offscreen);
 
     this.initScene.loadObj({ scene: this.scene });
   }
