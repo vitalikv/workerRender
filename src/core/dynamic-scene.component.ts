@@ -74,18 +74,7 @@ export class DynamicSceneComponent extends DynamicSceneBase {
   }
 
   ngAfterViewInit(): void {
-    let worker = false;
-    if (worker) {
-      // const initWorker = new InitWorker();
-      // initWorker.init();
-    } else {
-      super.ngAfterViewInit();
-    }
-  }
-
-  ngOnInit(): void {
-    this.isLeftSideNavOpen = false;
-    super.ngOnInit();
+    super.ngAfterViewInit();
   }
 
   ngOnDestroy(): void {

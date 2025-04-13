@@ -1,6 +1,5 @@
 import { Quaternion, Vector3 } from 'three';
-import { InitScene } from './initScene';
-import { CameraController } from './cameraController';
+import { DynamicSceneComponent } from './core/dynamic-scene.component';
 
 class CanvasWorker {
   scene = null;
@@ -9,6 +8,7 @@ class CanvasWorker {
   isDragging = false;
   previousMousePosition = { x: 0, y: 0 };
   initScene = null;
+  pseudoElement;
 
   constructor() {
     this.init();
@@ -26,6 +26,21 @@ class CanvasWorker {
         case 'initScene':
           this.handleInit(data);
           break;
+
+        case 'pointerdown': {
+          const { event } = data.payload;
+          this.pseudoElement.dispatchEvent({ type: data.type, ...event });
+
+          break;
+        }
+
+        case 'pointermove':
+
+        case 'pointerup': {
+          const { event } = data.payload;
+          this.pseudoElement.ownerDocument.dispatchEvent({ type: data.action, ...event });
+          break;
+        }
 
         case 'mousedown':
           this.handleMouseDown(data.clientX, data.clientY);
@@ -53,15 +68,23 @@ class CanvasWorker {
   }
 
   handleInit(data) {
-    this.initScene = new InitScene();
-    this.initScene.init({ canvas: data.offscreen, width: data.width, height: data.height });
-    this.initScene.renderFrame();
+    // this.initScene = new InitScene();
+    // this.initScene.init({ canvas: data.offscreen, width: data.width, height: data.height });
+    // this.initScene.renderFrame();
 
+    // this.scene = this.initScene.scene;
+    // this.camera = this.initScene.camera;
+    // //this.controls = new CameraController(this.camera, data.offscreen);
+
+    this.initScene = new DynamicSceneComponent();
+    this.initScene.setCanvas({ canvas: data.offscreen, width: data.width, height: data.height });
+    this.initScene.ngAfterViewInit();
     this.scene = this.initScene.scene;
     this.camera = this.initScene.camera;
-    //this.controls = new CameraController(this.camera, data.offscreen);
 
-    this.initScene.loadObj({ scene: this.scene });
+    this.controls = this.initScene.getControls();
+    this.pseudoElement = this.initScene.pseudoElement;
+    //this.pseudoElement = this.initScene.fakeCanvas;
   }
 
   handleMouseDown(clientX, clientY) {

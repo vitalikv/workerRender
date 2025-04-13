@@ -3,7 +3,7 @@
 import { TerrainMatrix } from './terrain-matrix.model';
 
 import { GraphicsUtil, MaterialUtil, SceneUtil } from './public-api';
-import { InteractionLeafletLocalStorageService } from './interaction-leaflet-localstorage.service';
+//import { InteractionLeafletLocalStorageService } from './interaction-leaflet-localstorage.service';
 import { GraphicsQualityModel } from './graphics-quality.model';
 
 import { AmbientLight, Camera, Clock, Color, DirectionalLight, EventListener, Light, Object3D, OrthographicCamera, PerspectiveCamera, Raycaster, Scene, Vector2, Vector3, WebGLInfo, WebGLRenderer } from 'three';
@@ -17,15 +17,19 @@ import { ColorCorrectionShader } from 'three/examples/jsm/shaders/ColorCorrectio
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader';
 import { GammaCorrectionShader } from 'three/examples/jsm/shaders/GammaCorrectionShader';
 import { MapControls } from 'three/examples/jsm/controls/MapControls';
+import CameraControls from 'camera-controls';
 
 export class Base3dLevelComponent {
   protected canvasRef;
 
+  public canvas;
+  public width = 0;
+  public height = 0;
   protected renderer: WebGLRenderer;
   protected composer: EffectComposer;
-  protected camera: Camera;
+  protected camera: PerspectiveCamera | OrthographicCamera;
   protected scene: Scene;
-  protected controls: MapControls;
+  protected controls: MapControls | CameraControls;
   protected trackControls: TrackballControls;
   protected lights: Light[];
   protected mainLight: DirectionalLight;
@@ -61,31 +65,38 @@ export class Base3dLevelComponent {
   protected sceneUtil = new SceneUtil();
   protected materialUtil = new MaterialUtil();
   protected graphicsUtil = new GraphicsUtil();
-  protected localStorageService = new InteractionLeafletLocalStorageService();
+  //protected localStorageService = new InteractionLeafletLocalStorageService();
 
   constructor() {
-    this.ngOnInit();
+    //this.ngOnInit();
+    this.qualityModel = { quality: 2 };
     this.raycast = new Raycaster();
     this.mouse = new Vector2();
-    this.fixPointer = new Vector2((758 / window.innerWidth) * 2 - 1, -(453 / window.innerHeight) * 2 + 1);
+    this.fixPointer = new Vector2((758 / this.width) * 2 - 1, -(453 / this.height) * 2 + 1);
     this.fixPointerState = false;
     this.cameraRigType = 'none';
     this.selectDirectionNav = false;
   }
 
-  ngOnInit(): void {
-    this.qualityModel = this.localStorageService.getGraphicsQuality();
-    if (!this.qualityModel) {
-      this.qualityModel = new GraphicsQualityModel();
-      this.qualityModel.quality = 1;
-      this.localStorageService.setGraphicsQuality(this.qualityModel);
-    }
-  }
+  // ngOnInit(): void {
+  //   this.qualityModel = this.localStorageService.getGraphicsQuality();
+  //   if (!this.qualityModel) {
+  //     this.qualityModel = new GraphicsQualityModel();
+  //     this.qualityModel.quality = 1;
+  //     this.localStorageService.setGraphicsQuality(this.qualityModel);
+  //   }
+  // }
 
   ngAfterViewInit(): void {
     this.qualityModel.quality = this.graphicsUtil.QUALITY_HIGHT;
     this.createLevel();
     this.onResize(null); //костыль для ресайза canvas
+  }
+
+  setCanvas({ canvas, width, height }) {
+    this.canvas = canvas;
+    this.width = width;
+    this.height = height;
   }
 
   createLevel(): void {
@@ -118,14 +129,14 @@ export class Base3dLevelComponent {
     //this.localStorageService.setGraphicsQuality(this.qualityModel);
     //this.destroyLevel();
     //this.createLevel();
-    window.location.reload();
+    //window.location.reload();
     //TODO: спросить как обновить компонент
   }
 
-  protected get canvas(): HTMLCanvasElement {
-    const canvas = document.querySelector('#scene1') as HTMLCanvasElement;
-    return canvas;
-  }
+  // protected get canvas(): HTMLCanvasElement {
+  //   const canvas = document.querySelector('#scene1') as HTMLCanvasElement;
+  //   return canvas;
+  // }
 
   protected initClock(): void {
     this.clock = new Clock();
@@ -137,14 +148,14 @@ export class Base3dLevelComponent {
   }
 
   protected initCamera(): void {
-    this.camera = new PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 500000);
+    this.camera = new PerspectiveCamera(45, this.width / this.height, 1, 500000);
     this.camera.position.set(110.36692165552938, 266.4496785841341, -0.18129580242442858);
     this.camera.rotation.set(-1.5714767396045877, 0.39269852285416285, 1.5725743319504473);
     //TODO: спросить дизайнера начальное положение камеры
   }
 
   protected initRenderer(): void {
-    this.renderer = this.graphicsUtil.createWebGLRenderer(this.qualityModel.quality, this.canvas);
+    this.renderer = this.graphicsUtil.createWebGLRenderer(this.qualityModel.quality, this.canvas, this.width, this.height);
     this.renderer.setClearColor(new Color(0xefd1b5));
   }
 
@@ -159,7 +170,7 @@ export class Base3dLevelComponent {
       const effectFXAA = new ShaderPass(FXAAShader);
       const gammaCorrection = new ShaderPass(GammaCorrectionShader);
 
-      effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
+      effectFXAA.uniforms['resolution'].value.set(1 / this.width, 1 / this.height);
       effectBleach.uniforms['opacity'].value = 0.1;
       effectColor.uniforms['powRGB'].value.set(1.4, 1.45, 1.45);
       effectColor.uniforms['mulRGB'].value.set(1.1, 1.1, 1.1);
@@ -213,6 +224,7 @@ export class Base3dLevelComponent {
   }
 
   public onResize(event: Event): void {
+    return;
     const rect = this.renderer.domElement.parentElement.getBoundingClientRect();
 
     if (this.camera instanceof PerspectiveCamera || this.camera instanceof OrthographicCamera) {
@@ -231,7 +243,7 @@ export class Base3dLevelComponent {
     return this.renderer;
   }
 
-  public getControls(): MapControls {
+  public getControls() {
     return this.controls;
   }
 
@@ -273,41 +285,7 @@ export class Base3dLevelComponent {
   }
 
   // метод управления камерой через левые инструменты навигации UI
-  public pointerLockChange(): void {
-    const moveCam = (e): void => {
-      if (this.cameraRigType === 'angle') {
-        if (!this.cameraTarget) {
-          this.setCameraTatget();
-        }
-        this.camera.translateX(e.movementX);
-        this.camera.translateY(-e.movementY);
-        this.camera.lookAt(this.cameraTarget);
-      } else if (this.cameraRigType === 'zoom') {
-        const futureDistance = this.controls.getDistance() + e.movementY * 5;
-        if (futureDistance > 10 && futureDistance < 4096) {
-          this.camera.translateZ(e.movementY * 5);
-          this.changeZoomControl();
-        }
-      } else if (this.cameraRigType === '2d') {
-        this.camera.translateX(e.movementX / 10);
-        this.camera.translateY(-e.movementY / 10);
-        this.setCameraTatget();
-      }
-    };
-
-    const cancelPointerLock = (): void => {
-      document.exitPointerLock();
-      document.removeEventListener('mousemove', moveCam);
-      document.removeEventListener('mouseup', cancelPointerLock);
-      this.cameraRigType = 'none';
-      this.fixPointerState = false;
-    };
-
-    if (this.cameraRigType !== 'none') {
-      document.addEventListener('mousemove', moveCam, false);
-      document.addEventListener('mouseup', cancelPointerLock, false);
-    }
-  }
+  public pointerLockChange(): void {}
 
   // метод установки цели при передвижении камеры с помощью левой панели инструментов навигации UI
   public setCameraTatget(): void {
@@ -318,40 +296,7 @@ export class Base3dLevelComponent {
   }
 
   // метод установки камеры в фиксированную позицию с помощью навигации UI
-  public setCameraToSidePosition(side: number): void {
-    this.selectDirectionNav = false;
-    this.selectedCameraPosition = side;
-    // аргумент target принимает
-    switch (side) {
-      case 1: // up
-        this.controls.target.set(1000, 500, 0);
-        this.camera.position.set(1000, 2000, 0);
-        this.controls.update();
-        break;
-      case 2: // south
-        this.controls.target.set(800, 0, 0);
-        this.camera.position.set(800, 800, 1800);
-        this.controls.update();
-        break;
-      case 3: // nord
-        this.controls.target.set(800, 0, 0);
-        this.camera.position.set(800, 800, -1500);
-        this.controls.update();
-        break;
-      case 4: // west
-        this.controls.target.set(1000, 0, 0);
-        this.camera.position.set(2500, 800, 0);
-        this.controls.update();
-        break;
-      case 5: // east
-        this.controls.target.set(500, 0, 0);
-        this.camera.position.set(-1000, 800, 0);
-        this.controls.update();
-        break;
-      default:
-        break;
-    }
-  }
+  public setCameraToSidePosition(side: number): void {}
 
   public pointerClose(): void {
     this.fixPointerState = false;

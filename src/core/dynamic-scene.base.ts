@@ -5,9 +5,13 @@ import { Sky } from 'three/examples/jsm/objects/Sky';
 import { InfiniteGridHelper } from './dp/InfiniteGridHelper';
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
 import { DebugEnvironment } from 'three/examples/jsm/environments/DebugEnvironment.js';
 //import { DynamicSceneService } from './dynamic-scene.service';
+
+import CameraControls from 'camera-controls';
+import { PseudoElement } from './camera/PseudoElement';
 
 import * as THREE from 'three';
 
@@ -44,7 +48,8 @@ export abstract class DynamicSceneBase extends Base3dLevelComponent {
       currentValue: number;
     };
   };
-
+  public fakeCanvas;
+  public pseudoElement = new PseudoElement();
   protected previousCameraPosition: Vector3 = new Vector3();
   protected isCameraChangeByWheel = false;
   protected isDisabledMainControls = false;
@@ -52,7 +57,7 @@ export abstract class DynamicSceneBase extends Base3dLevelComponent {
   private controlsUpdateHandler: () => void;
   private cameraHelper: CameraHelper | null = null;
   protected beforeRender(): void {
-    window['glsl_debug'] = this.renderer.info;
+    //window['glsl_debug'] = this.renderer.info;
   }
 
   private group: Group;
@@ -151,37 +156,117 @@ export abstract class DynamicSceneBase extends Base3dLevelComponent {
   }
 
   protected initControls(): void {
-    console.log(this.config);
-    this.controls = new OrbitControls(this.camera, this.canvas);
-    this.controls.target.copy(new Vector3(this.config.camera.target.x, this.config.camera.target.y, this.config.camera.target.z));
-    this.camera.position.copy(new Vector3(this.config.camera.position.x, this.config.camera.position.y, this.config.camera.position.z));
+    CameraControls.install({ THREE: THREE });
+
+    this.pseudoElement.update(0, 0, this.width, this.height);
+    this.controls = new CameraControls(this.camera, this.pseudoElement as any);
+    this.controls.setTarget(this.config.camera.target.x, this.config.camera.target.y, this.config.camera.target.z);
+    //this.camera.position.copy(new Vector3(this.config.camera.position.x, this.config.camera.position.y, this.config.camera.position.z));
+    this.controls.setPosition(this.config.camera.position.x, this.config.camera.position.y, this.config.camera.position.z);
     this.controls.maxDistance = 1200;
     this.controls.minDistance = 0;
 
-    this.controlsDowndateHandler = () => {
-      if (this.cameraHelper) {
-        this.cameraHelper.removeFromParent();
-        this.cameraHelper.dispose();
-      }
-      this.cameraHelper = new CameraHelper(this.camera.clone());
-      this.cameraHelper.position.copy(this.camera.position.clone());
-      this.scene.add(this.cameraHelper);
-    };
+    // this.fakeCanvas = {
+    //   width: this.width, // ваши размеры
+    //   height: this.height,
+    //   style: { width: this.width, height: this.height },
+    //   // addEventListener: () => {},
+    //   // removeEventListener: () => {},
+    //   clientWidth: this.width,
+    //   clientHeight: this.height,
+    //   getContext: () => {
+    //     return this.canvas; // или другая заглушка
+    //   },
+    //   getBoundingClientRect: () => ({
+    //     x: 0,
+    //     y: 0,
+    //     width: 849.5,
+    //     height: 1315,
+    //     top: 0,
+    //     right: 849.5,
+    //     bottom: 1315,
+    //     left: 0,
+    //   }),
+    //   getRootNode: () => ({
+    //     nodeType: 9, // DOCUMENT_NODE
+    //     host: null,
+    //     documentElement: {},
+    //     contains: () => false,
+    //     _listeners: {},
+    //     addEventListener(type, listener) {
+    //       if (!this._listeners[type]) this._listeners[type] = [];
+    //       this._listeners[type].push(listener);
+    //     },
+    //     removeEventListener(type, listener) {
+    //       if (!this._listeners[type]) return;
+    //       this._listeners[type] = this._listeners[type].filter((l) => l !== listener);
+    //     },
+    //     dispatchEvent(event) {
+    //       if (this._listeners[event.type]) {
+    //         this._listeners[event.type].forEach((l) => l(event));
+    //       }
+    //       return true;
+    //     },
+    //   }),
+    //   _listeners: {},
+    //   addEventListener(type, listener) {
+    //     if (!this._listeners[type]) this._listeners[type] = [];
+    //     this._listeners[type].push(listener);
+    //   },
+    //   removeEventListener(type, listener) {
+    //     if (!this._listeners[type]) return;
+    //     this._listeners[type] = this._listeners[type].filter((l) => l !== listener);
+    //   },
+    //   dispatchEvent(event) {
+    //     if (this._listeners[event.type]) {
+    //       this._listeners[event.type].forEach((l) => l(event));
+    //     }
+    //     return true;
+    //   },
+    //   _pointerCapture: null,
+    //   setPointerCapture(pointerId) {
+    //     this._pointerCapture = pointerId;
+    //   },
+    //   releasePointerCapture(pointerId) {
+    //     if (this._pointerCapture === pointerId) {
+    //       this._pointerCapture = null;
+    //     }
+    //   },
+    //   hasPointerCapture(pointerId) {
+    //     return this._pointerCapture === pointerId;
+    //   },
+    // };
 
-    this.controlsUpdateHandler = debounce(() => {
-      try {
-        // this.dynamicSceneService.sendFrustumRequest({
-        //   camera: this.camera as PerspectiveCamera,
-        //   config: this.config,
-        // });
-      } catch (error) {
-        console.error('Failed to send frustum request:', error);
-      }
-    }, 500);
+    // this.controls = new OrbitControls(this.camera, this.fakeCanvas as any);
+    // this.controls.target.copy(new Vector3(this.config.camera.target.x, this.config.camera.target.y, this.config.camera.target.z));
+    // this.camera.position.copy(new Vector3(this.config.camera.position.x, this.config.camera.position.y, this.config.camera.position.z));
+    // this.controls.maxDistance = 1200;
+    // this.controls.minDistance = 0;
 
-    this.controls.addEventListener('start', this.controlsDowndateHandler);
-    this.controls.addEventListener('end', this.controlsUpdateHandler);
-    this.controls.update();
+    // this.controlsDowndateHandler = () => {
+    //   if (this.cameraHelper) {
+    //     this.cameraHelper.removeFromParent();
+    //     this.cameraHelper.dispose();
+    //   }
+    //   this.cameraHelper = new CameraHelper(this.camera.clone());
+    //   this.cameraHelper.position.copy(this.camera.position.clone());
+    //   this.scene.add(this.cameraHelper);
+    // };
+
+    // this.controlsUpdateHandler = debounce(() => {
+    //   try {
+    //     // this.dynamicSceneService.sendFrustumRequest({
+    //     //   camera: this.camera as PerspectiveCamera,
+    //     //   config: this.config,
+    //     // });
+    //   } catch (error) {
+    //     console.error('Failed to send frustum request:', error);
+    //   }
+    // }, 500);
+
+    // // this.controls.addEventListener('start', this.controlsDowndateHandler);
+    // // this.controls.addEventListener('end', this.controlsUpdateHandler);
+    // this.controls.update();
   }
 
   protected clickHandler() {}
@@ -195,12 +280,16 @@ export abstract class DynamicSceneBase extends Base3dLevelComponent {
   protected render() {
     super.render();
     this.meshesCount = this.group.children.length;
+
+    const delta = this.clock.getDelta();
+
+    this.controls.update(delta);
   }
 
   public destroy(): void {
-    if (this.controls && this.controlsUpdateHandler) {
-      this.controls.removeEventListener('end', this.controlsUpdateHandler);
-    }
+    // if (this.controls && this.controlsUpdateHandler) {
+    //   this.controls.removeEventListener('end', this.controlsUpdateHandler);
+    // }
   }
 
   //---

@@ -8,7 +8,7 @@ export class GraphicsUtil {
   readonly QUALITY_HIGHT = 2;
   readonly QUALITY_REALISM = 3;
 
-  public createWebGLRenderer(quality: number, canvas: HTMLCanvasElement): WebGLRenderer {
+  public createWebGLRenderer(quality: number, canvas: HTMLCanvasElement, width, height): WebGLRenderer {
     const lowParams: WebGLRendererParameters = {
       antialias: false,
       precision: 'lowp',
@@ -51,8 +51,8 @@ export class GraphicsUtil {
     }
 
     const renderer = new WebGLRenderer(params);
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(width, height, false);
+    //renderer.setPixelRatio(window.devicePixelRatio);
 
     if (quality === this.QUALITY_LOW) {
       renderer.setPixelRatio(1);
