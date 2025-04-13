@@ -14,9 +14,7 @@ export class InitWorker {
     worker.postMessage(
       {
         type: 'initScene',
-        offscreen,
-        width: canvas.clientWidth,
-        height: canvas.clientHeight,
+        payload: { offscreen, x: 0, y: 0, width: canvas.clientWidth, height: canvas.clientHeight },
       },
       [offscreen]
     );
@@ -134,6 +132,15 @@ export class InitWorker {
       worker.postMessage({ type: 'pointerup', payload: { event: pseudoPointerEvent } });
     };
 
+    const endDragging = () => {
+      canvas.ownerDocument.removeEventListener('pointermove', onPointerMove, { passive: false });
+      canvas.ownerDocument.removeEventListener('pointerup', onPointerUp);
+    };
+
+    worker.addEventListener('message', ({ data }) => data?.type === 'controlend' && endDragging());
     canvas.addEventListener('pointerdown', onPointerDown);
+
+    // debug log
+    worker.addEventListener('message', ({ data }) => console.log(data));
   }
 }

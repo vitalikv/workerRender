@@ -1,120 +1,70 @@
-import { Quaternion, Vector3 } from 'three';
+import * as THREE from 'three';
 import { DynamicSceneComponent } from './core/dynamic-scene.component';
+import CameraControls from 'camera-controls';
+import { PseudoElement } from './core/camera/PseudoElement';
 
-class CanvasWorker {
-  scene = null;
-  camera = null;
-  controls = null;
-  isDragging = false;
-  previousMousePosition = { x: 0, y: 0 };
-  initScene = null;
-  pseudoElement;
+//CameraControls.install({ THREE });
 
-  constructor() {
-    this.init();
-  }
+// DOM element doesn't exist in WebWorker. use a virtual element in CameraControls instead.
+//const pseudoElement = new PseudoElement();
+let initScene;
+let scene;
+let camera;
+let renderer;
+let cameraControls;
+let controls;
+let pseudoElement;
 
-  init() {
-    self.onmessage = this.handleMessage.bind(this);
-  }
+self.onmessage = ({ data }) => {
+  const { type, payload } = data;
 
-  handleMessage(message) {
-    try {
-      const data = message.data;
+  switch (type) {
+    case 'initScene': {
+      const { offscreen, x, y, width, height } = payload;
+      offscreen.style = { width: '', height: '' };
 
-      switch (data.type) {
-        case 'initScene':
-          this.handleInit(data);
-          break;
+      initScene = new DynamicSceneComponent();
+      initScene.setCanvas({ canvas: offscreen, width: width, height: height });
+      initScene.ngAfterViewInit();
+      scene = initScene.scene;
+      camera = initScene.camera;
 
-        case 'pointerdown': {
-          const { event } = data.payload;
-          this.pseudoElement.dispatchEvent({ type: data.type, ...event });
+      controls = initScene.getControls();
+      pseudoElement = initScene.pseudoElement;
+      //this.pseudoElement = this.initScene.fakeCanvas;
 
-          break;
-        }
+      break;
+    }
 
-        case 'pointermove':
+    case 'resize': {
+      const { x, y, width, height } = payload;
+      pseudoElement.update(x, y, width, height);
+      renderer.setSize(width, height);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.render(scene, camera);
+      break;
+    }
 
-        case 'pointerup': {
-          const { event } = data.payload;
-          this.pseudoElement.ownerDocument.dispatchEvent({ type: data.action, ...event });
-          break;
-        }
+    case 'pointerdown': {
+      const { event } = payload;
+      pseudoElement.dispatchEvent({ type, ...event });
+      break;
+    }
 
-        case 'mousedown':
-          this.handleMouseDown(data.clientX, data.clientY);
-          break;
+    case 'pointermove':
+    case 'pointerup': {
+      const { event } = payload;
+      pseudoElement.ownerDocument.dispatchEvent({ type, ...event });
+      break;
+    }
 
-        case 'mousemove':
-          this.handleMouseMove(data.clientX, data.clientY);
-          break;
-
-        case 'mouseup':
-          this.handleMouseUp();
-          break;
-
-        case 'click':
-          console.log(`${data.rect.width}`);
-          this.getClickedObject({ clientX: data.clientX, clientY: data.clientY }, this.camera, this.scene, data.rect);
-          break;
-
-        default:
-          console.log(`Unknown message type: ${data.type}`);
-      }
-    } catch (error) {
-      console.error('Error in worker:', error);
+    case 'reset': {
+      cameraControls.reset(true);
+      break;
     }
   }
 
-  handleInit(data) {
-    // this.initScene = new InitScene();
-    // this.initScene.init({ canvas: data.offscreen, width: data.width, height: data.height });
-    // this.initScene.renderFrame();
-
-    // this.scene = this.initScene.scene;
-    // this.camera = this.initScene.camera;
-    // //this.controls = new CameraController(this.camera, data.offscreen);
-
-    this.initScene = new DynamicSceneComponent();
-    this.initScene.setCanvas({ canvas: data.offscreen, width: data.width, height: data.height });
-    this.initScene.ngAfterViewInit();
-    this.scene = this.initScene.scene;
-    this.camera = this.initScene.camera;
-
-    this.controls = this.initScene.getControls();
-    this.pseudoElement = this.initScene.pseudoElement;
-    //this.pseudoElement = this.initScene.fakeCanvas;
-  }
-
-  handleMouseDown(clientX, clientY) {
-    this.isDragging = true;
-    this.previousMousePosition = { x: clientX, y: clientY };
-  }
-
-  handleMouseMove(clientX, clientY) {
-    if (this.isDragging && this.camera) {
-      const deltaX = clientX - this.previousMousePosition.x;
-      const deltaY = clientY - this.previousMousePosition.y;
-
-      const quaternion = new Quaternion();
-      quaternion.setFromAxisAngle(new Vector3(0, 1, 0), deltaX * 0.01);
-      this.camera.quaternion.multiply(quaternion);
-
-      quaternion.setFromAxisAngle(new Vector3(1, 0, 0), deltaY * 0.01);
-      this.camera.quaternion.multiply(quaternion);
-
-      this.previousMousePosition = { x: clientX, y: clientY };
-    }
-  }
-
-  handleMouseUp() {
-    this.isDragging = false;
-  }
-
-  getClickedObject(event, camera, scene, rect) {
-    this.initScene.getClickedObject(event, camera, scene, rect);
-  }
-}
-
-new CanvasWorker();
+  // debug log
+  self.postMessage(data.type);
+};

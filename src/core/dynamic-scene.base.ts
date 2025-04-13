@@ -165,7 +165,7 @@ export abstract class DynamicSceneBase extends Base3dLevelComponent {
     this.controls.setPosition(this.config.camera.position.x, this.config.camera.position.y, this.config.camera.position.z);
     this.controls.maxDistance = 1200;
     this.controls.minDistance = 0;
-
+    this.controls.addEventListener('controlend', () => self.postMessage({ action: 'controlend' }));
     // this.fakeCanvas = {
     //   width: this.width, // ваши размеры
     //   height: this.height,
